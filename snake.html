@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+
+</head>
+
+<canvas id = "window" width = "500" height = "500"
+        style = "border:1px solid #d3d3d3">
+   ]
+</canvas>
+
+<script>
+
+    //canvas variables/global variables for the project
+    var canvas;
+    var ctx;
+    var cell = 10;
+    var food;
+    var left;
+    var right;
+    var up;
+    var down;
+    var score = 0;
+    var interval = 60;
+    var speed = 20;
+    var snake; // going to be array of squares to make the snake
+    var dy;
+    var dx;
+    var gameOver = false;
+    var walls;
+
+
+    function draw(){
+        //the draw function simple will get the snake array(where all the
+        //snake game objects are being held and draw them to the board
+
+        clear();
+        ctx.strokeStyle = "green";
+
+
+            for(var i = 0; i < snake.length;i++){
+            var c = snake[i];
+                //square inside the snake chain
+            drawObject(c.x, c.y,1);
+        }
+
+        for(var j = 0; j < walls.length;j++){
+            var a = walls[j];
+            drawObject(a.x, a.y,3);
+
+        }
+        moveSnake();
+        drawObject(food.x,food.y,2);
+        //This changes where the score is displayed, either in the bottom
+        // right corner or in the center of the screen after you game over
+        if(gameOver == false){
+            ctx.font ="15px Goergia";
+            var score_ = "Score: " + score;
+            ctx.fillText(score_,430,490);
+
+        }else{
+            ctx.font ="50px Goergia";
+            var game = "Game Over";
+            var score_ = "Score: " + score;
+            ctx.fillText(score_,150,150);
+            ctx.fillText(game,150,100);
+        }
+
+
+    }//draw
+      //function that will set al the proper variables for whenever we hit the keys to move
+    function onKeyDown(evt){
+       if(evt.keyCode ==87 && down != true ){
+           up = true;
+           right = false;
+           down = false;
+           left = false;
+       }else if(evt.keyCode ==83 && up != true ){
+           down = true;
+           right = false;
+           left = false;
+           up = false;
+
+       }else if(evt.keyCode == 65 && right != true ){
+           left = true;
+           down = false;
+           right = false;
+           up = false;
+
+       }else if(evt.keyCode == 68 && left != true){
+           right = true;
+           left = false;
+           down = false;
+           up = false;
+
+       }
+
+
+    }//onkey down function
+
+
+        //function that will set the color of the an item based on
+    // if its a wall, a peice of food, or part of the snake, green = snake
+    // blue == wall and red = food to eat
+    function drawObject(x,y,z){
+        if (z == 1){
+            ctx.fillStyle = "green";
+            ctx.fillRect(x*cell,y*cell,cell,cell);
+            ctx.strokeStyle = "white";
+            ctx.strokeRect(x*cell, y*cell, cell, cell);
+        }else if ( z == 2){
+            ctx.fillStyle = "red";
+            ctx.fillRect(x*cell,y*cell,cell,cell);
+        }else if( z== 3){
+            ctx.fillStyle = "blue";
+            ctx.fillRect(x*cell,y*cell,cell,cell);
+        }
+        //based on what type of object we need to draw it will be green blue
+        //or red
+
+    }
+
+    function clear(){
+        ctx.clearRect(0,0,500,500);
+    }
+
+    //function to add the mini walls to the canvas, just selets random
+    //x and y coordinate for each peice of wall in the canvas
+    function addWall(){
+        var length = 30;
+        walls = [];
+        for(var i = 0; i < length;i++){
+            walls.push({x: Math.round(Math.random()*(500-cell)/cell),y:
+                    Math.round(Math.random()*(500-cell)/cell)});
+        }
+
+
+    }
+
+
+    function init(){
+        right = false;
+        down = true;
+        up = false;
+        left = false;
+        canvas = document.getElementById("window");
+        ctx = canvas.getContext("2d");
+
+        window.addEventListener('keydown',onKeyDown, true);
+        createSnake();
+        createFood();
+        //addWall();
+        setInterval(addWall(),9000);
+        setInterval(draw,1000/speed);
+
+    }
+  //function that simply creats the snake game object array and will create
+    //a snake of length 10 and place it in the top left corner of the screen
+    function createSnake(){
+        var length = 10;
+        snake = [];
+        for(var i = 0; i < length;i++){
+            snake.push({x:i,y:0});
+        }
+    }//create snake
+ //this is the function that updates the entire snake object and controls how it moves
+    //and how all the detection elements are handled
+    function moveSnake(){
+        dx = snake[0].x;
+        dy = snake[0].y;
+         //based on which key is pressed, the direction of the snake is chosen
+        if(right == true){
+            dx++;
+        }else if(left == true){
+            dx--;
+        }else if(up == true){
+            dy--;
+        }else if(down == true){
+            dy++;
+        }else{
+
+        }
+         //update the snake tail
+        var tail = snake.pop();
+        tail.x = dx;
+        tail.y = dy;
+        //the unshift function simply adds the object to the front of the array
+        //so every tim ewe do this we are updating the head of the array with the tail
+        snake.unshift(tail);
+              //check if the snake has hit a wall or not
+
+         if(dx < 0 || dx > 500/cell || dy < 0 || dy > 500/cell){
+
+
+             gameOver = true;
+
+             down = false;
+             up = false;
+             left = false;
+             right = false;
+        }
+
+            //check if the snake hs eaten food or if it hits itself
+        if(dx == food.x && dy == food.y){
+            var tail = {x:dx,y:dy};
+            snake.unshift(tail);
+            score++;
+            //food is eaten and now spawn more food
+            createFood();
+            addWall();
+            if(speed < 55){
+                speed++;
+            }
+
+        }else {
+                    //goes through snake array to to see if it hits itself
+            for (var j = 1; j < snake.length; j++) {
+                var s = snake[j];
+                if (dx == s.x && dy == s.y) {
+                    gameOver = true;
+
+                    down = false;
+                    up = false;
+                    left = false;
+                    right = false;
+
+                }//if
+            }//for
+
+        }//else
+
+        //checks the heads position with the entire "walls" game object array
+        //the collision detection simply checks the x and y coordinates of the 2 objects
+        //if they are true the game over variable is toggled and the socre will be displayed on screen
+        for(var k = 1; k < walls.length; k++){
+            var d = walls[k];
+            if(dx == d.x && dy == d.y){
+                gameOver = true;
+
+                down = false;
+                up = false;
+                left = false;
+                right = false;
+
+            }
+        }
+
+
+
+    }
+
+    function createFood(){
+       //sets random cooridnate inside the game window for the food
+        food = {
+            x: Math.round(Math.random()*(500-cell)/cell),
+            y: Math.round(Math.random()*(500-cell)/cell)
+        };
+    }// create food
+
+
+</script>
+
+
+<body onload = "init()">
+
+
+</body>
+</html>
